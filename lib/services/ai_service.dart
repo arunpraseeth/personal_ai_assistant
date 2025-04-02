@@ -1,13 +1,16 @@
 import 'dart:convert';
-import 'package:aiassistant/utils/constant.dart';
+// import 'package:aiassistant/utils/constant.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class AIService {
+  String? baseUrl = dotenv.env['CLIENT_URL'];
+
   Future<String> getAIResponse(String input) async {
     try {
       final url = Uri.parse(
-        '$BASE_URL/v1/chat/completions',
+        '$baseUrl/v1/chat/completions',
       ); // Corrected API path
       final response = await http.post(
         url,
