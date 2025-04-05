@@ -1,43 +1,113 @@
+import 'dart:math';
+import 'package:aiassistant/providers/transcribe_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
+import 'package:record/record.dart';
 
 class SpeechToTextPage extends StatefulWidget {
+  const SpeechToTextPage({super.key});
+
   @override
-  _SpeechToTextPageState createState() => _SpeechToTextPageState();
+  State<SpeechToTextPage> createState() => _SpeechToTextPageState();
 }
 
 class _SpeechToTextPageState extends State<SpeechToTextPage> {
-  late IO.Socket socket;
+  final FlutterTts flutterTts = FlutterTts();
   String transcription = "";
   bool isListening = false;
   String? serverUrl;
+  bool isRecording = false;
+  late final AudioRecorder _audioRecorder;
+  String? _audioPath;
 
   @override
   void initState() {
+    _audioRecorder = AudioRecorder();
     super.initState();
-    // Initialize socket, but don't connect yet
-    serverUrl = dotenv.env['SERVER_URL'];
-    socket = IO.io(serverUrl, <String, dynamic>{
-      'transports': ['websocket'],
-      'autoConnect': false,
-    });
   }
 
-  // Establish WebSocket connection to the Python server when button is pressed
-  void startListening() {
+  String _generateRandomId() {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final random = Random();
+    return List.generate(
+      10,
+      (index) => chars[random.nextInt(chars.length)],
+      growable: false,
+    ).join();
+  }
+
+  Future<void> _startRecording() async {
     setState(() {
-      isListening = true;
+      isRecording = true;
     });
+    try {
+      debugPrint('RECORDING!!!!!!!!!!!!!!!');
 
-    socket.connect();
+      String filePath = await getApplicationDocumentsDirectory().then(
+        (value) => '${value.path}/${_generateRandomId()}.wav',
+      );
 
-    // Listen for 'transcription' messages from the server
-    socket.on('transcription', (data) {
+      await _audioRecorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.wav, // specify the codec to be `.wav`
+        ),
+        path: filePath,
+      );
+    } catch (e) {
+      debugPrint('ERROR WHILE RECORDING: $e');
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      String? path = await _audioRecorder.stop();
+
       setState(() {
-        transcription = data['text'];
+        isRecording = false;
+        _audioPath = path!;
       });
-    });
+      debugPrint('PATH: $_audioPath');
+      if (mounted) {
+        Provider.of<TranscribeProvider>(
+          context,
+          listen: false,
+        ).sendVoice(audiopath: _audioPath!);
+      }
+    } catch (e) {
+      debugPrint('ERROR WHILE STOP RECORDING: $e');
+    }
+  }
+
+  void _record() async {
+    if (isRecording == false) {
+      final status = await Permission.microphone.request();
+
+      if (status == PermissionStatus.granted) {
+        setState(() {
+          isRecording = true;
+        });
+        await _startRecording();
+      } else if (status == PermissionStatus.permanentlyDenied) {
+        debugPrint('Permission permanently denied');
+        openAppSettings();
+      }
+    } else {
+      await _stopRecording();
+
+      setState(() {
+        isRecording = false;
+      });
+    }
+  }
+
+  Future<void> speak(String text) async {
+    await flutterTts.setLanguage("en-US");
+    await flutterTts.setPitch(1.0);
+    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.speak(text);
   }
 
   // Stop listening and disconnect the socket
@@ -45,16 +115,11 @@ class _SpeechToTextPageState extends State<SpeechToTextPage> {
     setState(() {
       isListening = false;
     });
-
-    socket.emit(
-      'stop_listening',
-    ); // Send message to stop the server-side listening
-    socket.disconnect();
   }
 
   @override
   void dispose() {
-    socket.disconnect();
+    _audioRecorder.dispose();
     super.dispose();
   }
 
@@ -74,10 +139,11 @@ class _SpeechToTextPageState extends State<SpeechToTextPage> {
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed:
-                    isListening
-                        ? stopListening
-                        : startListening, // Switch button behavior
+                onPressed: _record,
+
+                // isListening
+                //     ? stopListening
+                //     : startListening, // Switch button behavior
                 child: Text(isListening ? 'Stop Listening' : 'Start Listening'),
               ),
             ],

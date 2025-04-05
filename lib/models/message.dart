@@ -1,6 +1,6 @@
-class Message {
+class MessageModel {
   final String text;
   final bool isUser;
 
-  Message({required this.text, required this.isUser});
+  MessageModel({required this.text, required this.isUser});
 }

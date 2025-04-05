@@ -1,23 +1,38 @@
-import 'package:flutter_tts/flutter_tts.dart';
-import 'package:speech_to_text/speech_to_text.dart';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
-class SpeechService {
-  final SpeechToText _speech = SpeechToText();
-  final FlutterTts _tts = FlutterTts();
+class SpeechServices {
+  String? baseUrl = dotenv.env['SERVER_URL'];
+  Future<String> sendAudioToWhisper(String audioPath) async {
+    try {
+      final uri = Uri.parse('$baseUrl/voice');
 
-  Future<bool> startListening(Function(String) onResult) async {
-    bool available = await _speech.initialize();
-    if (available) {
-      _speech.listen(onResult: (result) => onResult(result.recognizedWords));
+      var request = http.MultipartRequest('POST', uri);
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'audio',
+          audioPath,
+          contentType: MediaType('audio', 'wav'),
+        ),
+      );
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        final decoded = jsonDecode(responseBody);
+        debugPrint("AI Reply: ${decoded["ai_reply"]}");
+        return decoded["ai_reply"];
+      } else {
+        return "Error: ${response.statusCode}";
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print(e);
+      }
+      return "Server error: $e";
     }
-    return available;
-  }
-
-  Future<void> stopListening() async {
-    await _speech.stop();
-  }
-
-  Future<void> speak(String text) async {
-    await _tts.speak(text);
   }
 }

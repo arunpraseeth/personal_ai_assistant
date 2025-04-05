@@ -1,5 +1,4 @@
 import 'dart:convert';
-// import 'package:aiassistant/utils/constant.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
@@ -16,7 +15,7 @@ class AIService {
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          "model": "mistral", // Model name in LM Studio
+          "model": "meta-llama-3-8b-instruct", // Model name in LM Studio
           "messages": [
             {"role": "user", "content": input},
           ],
@@ -27,8 +26,7 @@ class AIService {
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-        final responseText =
-            jsonResponse['choices'][0]['message']['content'] ?? 'No response';
+        String responseText = jsonResponse['choices'][0]['message']['content'] ?? 'No response';
         return responseText;
       } else {
         return 'Error: ${response.statusCode}';
@@ -37,7 +35,7 @@ class AIService {
       if (kDebugMode) {
         print(e);
       }
-      return 'Error connecting to Mistral server';
+      return 'Error connecting to LM Studio server';
     }
   }
 }

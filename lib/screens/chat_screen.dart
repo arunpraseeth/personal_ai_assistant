@@ -1,3 +1,7 @@
+import 'package:aiassistant/animations/threedots.dart';
+import 'package:aiassistant/screens/voice.dart';
+import 'package:aiassistant/utils/constant.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
@@ -11,27 +15,40 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
+  bool _loading = false;
+  // ignore: unused_field
+  int _index = 0;
 
   void _sendMessage() {
-    if (_controller.text.isEmpty) return;
-    Provider.of<ChatProvider>(
-      context,
-      listen: false,
-    ).addUserMessage(_controller.text);
-    _controller.clear();
+    setState(() {
+      _loading = true;
+    });
+    if (_controller.text.isEmpty) {
+      Navigator.push(
+        context,
+        CupertinoPageRoute(builder: (context) => SpeechToTextPage()),
+      );
+    } else {
+      Provider.of<ChatProvider>(context, listen: false).setLoading(true);
+      Provider.of<ChatProvider>(
+        context,
+        listen: false,
+      ).addUserMessage(_controller.text);
+      _controller.clear();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     var chatProvider = Provider.of<ChatProvider>(context);
-
+    // bool loading = Provider.of<ChatProvider>(context).isLoading;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
         shadowColor: Colors.grey,
         title: const Text(
-          'Ask Menpo',
+          'Ask Me',
           style: TextStyle(fontWeight: FontWeight.w500),
         ),
       ),
@@ -47,27 +64,62 @@ class _ChatScreenState extends State<ChatScreen> {
                   reverse: true,
                   itemCount: chatProvider.messages.length,
                   itemBuilder: (context, index) {
-                    var message = chatProvider.messages[index];
+                    _index = index;
+                    var message = chatProvider.messages;
                     return Align(
                       alignment:
-                          message.isUser
+                          message[index].isUser
                               ? Alignment.centerRight
                               : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                          vertical: 5,
-                          horizontal: 10,
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: message.isUser ? Color(0xFFE5E4E2) : null,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          message.text,
-                          style: TextStyle(fontSize: 17),
-                        ),
-                      ),
+                      child:
+                          message[index].isUser
+                              ? Container(
+                                margin: EdgeInsets.symmetric(
+                                  horizontal: 15,
+                                  vertical: 15,
+                                ),
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color:
+                                      message[index].isUser
+                                          ? Color(0xFFE5E4E2)
+                                          : null,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  message[index].text,
+                                  style: TextStyle(fontSize: 17),
+                                ),
+                              )
+                              : Padding(
+                                padding: EdgeInsets.only(
+                                  left: 10,
+                                  right: 40,
+                                  bottom: 15,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Image(
+                                      image: AssetImage(Images.neurology),
+                                      height: 25,
+                                      color: Colors.black87,
+                                    ),
+                                    SizedBox(width: 5),
+                                    // _loading
+                                    //     ? ThreeDotsLoader()
+                                    //     :
+                                    Flexible(
+                                      child: Text(
+                                        message[index].text,
+                                        textAlign: TextAlign.justify,
+                                        style: TextStyle(fontSize: 17),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                     );
                   },
                 ),
@@ -111,11 +163,19 @@ class _ChatScreenState extends State<ChatScreen> {
                               border: InputBorder.none,
                               hintText: 'Ask me...',
                             ),
+                            onChanged: (value) {
+                              setState(() {
+                                _controller.text = value;
+                              });
+                            },
                           ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.send),
+                        icon:
+                            _controller.text.isNotEmpty
+                                ? Icon(Icons.arrow_upward_rounded)
+                                : Icon(Icons.voice_chat),
                         onPressed: _sendMessage,
                       ),
                     ],
