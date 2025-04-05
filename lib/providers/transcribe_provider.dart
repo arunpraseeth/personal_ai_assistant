@@ -1,3 +1,5 @@
+import 'package:aiassistant/models/transcribe.dart';
+import 'package:aiassistant/providers/chat_provider.dart';
 import 'package:aiassistant/services/flutter_tts.dart';
 import 'package:aiassistant/services/speech_service.dart';
 import 'package:flutter/material.dart';
@@ -10,25 +12,33 @@ class TranscribeProvider extends ChangeNotifier {
 
   List<MessageModel> get messages => _messages;
 
-  Future<void> sendVoice({required String audiopath}) async {
+  Future<void> sendVoice({
+    required String audiopath,
+    required ChatProvider chatProvider,
+  }) async {
     // _messages.insert(0, MessageModel(text: text, isUser: true));
     // notifyListeners();
 
-    String response = await SpeechServices().sendAudioToWhisper(audiopath).then(
-      (String value) {
-        debugPrint("Just now completed");
-        return value;
-      },
+    Map<String, dynamic> result = await SpeechServices().sendAudioToWhisper(
+      audiopath,
     );
-    FlutterttsSpeak().speak(text: response, flutterTts: flutterTts);
-    // _messages.insert(
-    //   0,
-    //   MessageModel(text: response["user_text"]!, isUser: true),
-    // );
-    // _messages.insert(
-    //   0,
-    //   MessageModel(text: response["ai_reply"]!, isUser: false),
-    // );
+    final userText = result['user_text'] ?? '';
+    final aiReply = result['ai_reply'] ?? '';
+    if (userText.trim().isNotEmpty) {
+      chatProvider.messages.insert(
+        0,
+        MessageModel(text: userText, isUser: true),
+      );
+    }
+    if (aiReply.trim().isNotEmpty) {
+      chatProvider.messages.insert(
+        0,
+        MessageModel(text: aiReply, isUser: false),
+      );
+    }
+    chatProvider.notifyListeners();
+
+    FlutterttsSpeak().speak(text: aiReply, flutterTts: flutterTts);
     notifyListeners();
   }
 }

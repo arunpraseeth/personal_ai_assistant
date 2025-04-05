@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:aiassistant/providers/chat_provider.dart';
 import 'package:aiassistant/providers/transcribe_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -74,7 +75,7 @@ class _SpeechToTextPageState extends State<SpeechToTextPage> {
         Provider.of<TranscribeProvider>(
           context,
           listen: false,
-        ).sendVoice(audiopath: _audioPath!);
+        ).sendVoice(audiopath: _audioPath!, chatProvider: Provider.of<ChatProvider>(context, listen: false),);
       }
     } catch (e) {
       debugPrint('ERROR WHILE STOP RECORDING: $e');

@@ -25,4 +25,10 @@ class ChatProvider extends ChangeNotifier {
     _isLoading = loading;
     notifyListeners();
   }
+
+  void addMessagePair(String userText, String aiReply) {
+    _messages.insert(0, MessageModel(text: aiReply, isUser: false));
+    _messages.insert(0, MessageModel(text: userText, isUser: true));
+    notifyListeners();
+  }
 }
