@@ -26,7 +26,9 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_controller.text.isEmpty) {
       Navigator.push(
         context,
-        CupertinoPageRoute(builder: (context) => SpeechToTextPage()),
+        CupertinoPageRoute(
+          builder: (context) => SpeechToTextPage(),
+        ),
       );
     } else {
       Provider.of<ChatProvider>(context, listen: false).setLoading(true);
@@ -37,7 +39,6 @@ class _ChatScreenState extends State<ChatScreen> {
       _controller.clear();
     }
   }
-
   @override
   Widget build(BuildContext context) {
     var chatProvider = Provider.of<ChatProvider>(context);

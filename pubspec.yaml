@@ -12,7 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.2.0
-  speech_to_text: ^6.1.0
+  speech_to_text: ^7.0.0
   provider: ^6.1.1
   path_provider: ^2.1.2
   permission_handler: ^11.3.0
@@ -22,6 +22,8 @@ dependencies:
   flutter_tts: ^4.2.2
   cupertino_icons: ^1.0.8
   http_parser: ^4.1.2
+  flutter_audio_capture: ^1.1.9
+  flutter_hooks: ^0.20.5
 
 dev_dependencies:
   flutter_test:
@@ -37,6 +39,8 @@ flutter:
   assets:
     - .env
     - assests/images/neurology.png
+    - assests/images/visualizer.gif
+    - assests/images/joey-thinking.gif
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

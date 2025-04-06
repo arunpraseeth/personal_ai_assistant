@@ -1,5 +1,7 @@
 PODS:
   - Flutter (1.0.0)
+  - flutter_audio_capture (1.1.4):
+    - Flutter
   - flutter_tts (0.0.1):
     - Flutter
   - path_provider_foundation (0.0.1):
@@ -11,16 +13,18 @@ PODS:
     - Flutter
   - speech_to_text (0.0.1):
     - Flutter
+    - FlutterMacOS
     - Try
   - Try (2.1.1)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
+  - flutter_audio_capture (from `.symlinks/plugins/flutter_audio_capture/ios`)
   - flutter_tts (from `.symlinks/plugins/flutter_tts/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - record_ios (from `.symlinks/plugins/record_ios/ios`)
-  - speech_to_text (from `.symlinks/plugins/speech_to_text/ios`)
+  - speech_to_text (from `.symlinks/plugins/speech_to_text/darwin`)
 
 SPEC REPOS:
   trunk:
@@ -29,6 +33,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   Flutter:
     :path: Flutter
+  flutter_audio_capture:
+    :path: ".symlinks/plugins/flutter_audio_capture/ios"
   flutter_tts:
     :path: ".symlinks/plugins/flutter_tts/ios"
   path_provider_foundation:
@@ -38,17 +44,18 @@ EXTERNAL SOURCES:
   record_ios:
     :path: ".symlinks/plugins/record_ios/ios"
   speech_to_text:
-    :path: ".symlinks/plugins/speech_to_text/ios"
+    :path: ".symlinks/plugins/speech_to_text/darwin"
 
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  flutter_audio_capture: 93ef890ac148f093d168c33258c3a161b8f5e04b
   flutter_tts: 0f492aab6accf87059b72354fcb4ba934304771d
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
   record_ios: 1bbc430ab8406174d70332f23e06a3dc751239b4
-  speech_to_text: b43a7d99aef037bd758ed8e45d79bbac035d2dfe
+  speech_to_text: 627d3fd2194770b51abb324ba45c2d39398f24a8
   Try: 5ef669ae832617b3cee58cb2c6f99fb767a4ff96
 
-PODFILE CHECKSUM: 046add8dec173fa3ee8e15698efbca5153123398
+PODFILE CHECKSUM: 95dc137b4496361f724305e0f13baa6ae12caf9f
 
 COCOAPODS: 1.16.2

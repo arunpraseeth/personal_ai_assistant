@@ -1,4 +1,3 @@
-import 'package:aiassistant/models/transcribe.dart';
 import 'package:aiassistant/providers/chat_provider.dart';
 import 'package:aiassistant/services/flutter_tts.dart';
 import 'package:aiassistant/services/speech_service.dart';
@@ -16,9 +15,6 @@ class TranscribeProvider extends ChangeNotifier {
     required String audiopath,
     required ChatProvider chatProvider,
   }) async {
-    // _messages.insert(0, MessageModel(text: text, isUser: true));
-    // notifyListeners();
-
     Map<String, dynamic> result = await SpeechServices().sendAudioToWhisper(
       audiopath,
     );
@@ -38,7 +34,9 @@ class TranscribeProvider extends ChangeNotifier {
     }
     chatProvider.notifyListeners();
 
-    FlutterttsSpeak().speak(text: aiReply, flutterTts: flutterTts);
-    notifyListeners();
+    if (aiReply.trim().isNotEmpty) {
+      FlutterttsSpeak().speak(text: aiReply, flutterTts: flutterTts);
+      notifyListeners();
+    }
   }
 }

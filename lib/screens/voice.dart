@@ -1,6 +1,10 @@
 import 'dart:math';
+import 'dart:async';
+import 'package:aiassistant/animations/audio_visualizer.dart';
 import 'package:aiassistant/providers/chat_provider.dart';
 import 'package:aiassistant/providers/transcribe_provider.dart';
+import 'package:aiassistant/services/flutter_tts.dart';
+import 'package:aiassistant/utils/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:path_provider/path_provider.dart';
@@ -17,12 +21,14 @@ class SpeechToTextPage extends StatefulWidget {
 
 class _SpeechToTextPageState extends State<SpeechToTextPage> {
   final FlutterTts flutterTts = FlutterTts();
-  String transcription = "";
-  bool isListening = false;
+  late final AudioRecorder _audioRecorder;
   String? serverUrl;
   bool isRecording = false;
-  late final AudioRecorder _audioRecorder;
+  bool _speaking = false;
+  bool _thinking = false;
   String? _audioPath;
+  Timer? _timer;
+  final List<double> _audioLevels = [];
 
   @override
   void initState() {
@@ -43,6 +49,7 @@ class _SpeechToTextPageState extends State<SpeechToTextPage> {
   Future<void> _startRecording() async {
     setState(() {
       isRecording = true;
+      _thinking = true;
     });
     try {
       debugPrint('RECORDING!!!!!!!!!!!!!!!');
@@ -57,6 +64,7 @@ class _SpeechToTextPageState extends State<SpeechToTextPage> {
         ),
         path: filePath,
       );
+      _startLevelMonitor();
     } catch (e) {
       debugPrint('ERROR WHILE RECORDING: $e');
     }
@@ -72,14 +80,44 @@ class _SpeechToTextPageState extends State<SpeechToTextPage> {
       });
       debugPrint('PATH: $_audioPath');
       if (mounted) {
-        Provider.of<TranscribeProvider>(
-          context,
-          listen: false,
-        ).sendVoice(audiopath: _audioPath!, chatProvider: Provider.of<ChatProvider>(context, listen: false),);
+        Provider.of<TranscribeProvider>(context, listen: false)
+            .sendVoice(
+              audiopath: _audioPath!,
+              chatProvider: Provider.of<ChatProvider>(context, listen: false),
+            )
+            .then((value) {
+              setState(() {
+                _speaking = true;
+                _thinking = false;
+              });
+            });
       }
+      _stopLevelMonitor();
     } catch (e) {
       debugPrint('ERROR WHILE STOP RECORDING: $e');
     }
+  }
+
+  // Monitor audio levels in real-time
+  void _startLevelMonitor() {
+    _timer = Timer.periodic(const Duration(milliseconds: 50), (
+      Timer timer,
+    ) async {
+      final level = await _audioRecorder.getAmplitude();
+
+      setState(() {
+        _audioLevels.add(level.current);
+        if (_audioLevels.length > 50) {
+          // Keep a reasonable number of data points
+          _audioLevels.removeAt(0);
+        }
+      });
+    });
+  }
+
+  // Stop monitoring
+  void _stopLevelMonitor() {
+    _timer?.cancel();
   }
 
   void _record() async {
@@ -104,23 +142,10 @@ class _SpeechToTextPageState extends State<SpeechToTextPage> {
     }
   }
 
-  Future<void> speak(String text) async {
-    await flutterTts.setLanguage("en-US");
-    await flutterTts.setPitch(1.0);
-    await flutterTts.setSpeechRate(0.5);
-    await flutterTts.speak(text);
-  }
-
-  // Stop listening and disconnect the socket
-  void stopListening() {
-    setState(() {
-      isListening = false;
-    });
-  }
-
   @override
   void dispose() {
     _audioRecorder.dispose();
+    _stopLevelMonitor();
     super.dispose();
   }
 
@@ -134,19 +159,27 @@ class _SpeechToTextPageState extends State<SpeechToTextPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Text(
-                'Transcription: $transcription',
-                style: TextStyle(fontSize: 24),
-              ),
-              SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _record,
-
-                // isListening
-                //     ? stopListening
-                //     : startListening, // Switch button behavior
-                child: Text(isListening ? 'Stop Listening' : 'Start Listening'),
+                child: Text(isRecording ? 'Stop Listening' : 'Start Listening'),
               ),
+              SizedBox(height: 20),
+              _thinking ? Image.asset(Images.thinking, scale: 1) : SizedBox(),
+              _speaking
+                  ? Image.asset(Images.visualizer, scale: 2.5)
+                  : SizedBox(),
+              SizedBox(height: 20),
+              _speaking
+                  ? ElevatedButton(
+                    onPressed: () async {
+                      setState(() {
+                        _speaking = false;
+                      });
+                      await flutterTts.stop();
+                    },
+                    child: Text('Stop Speaking'),
+                  )
+                  : SizedBox(),
             ],
           ),
         ),
